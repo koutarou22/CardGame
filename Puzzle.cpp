@@ -1,5 +1,5 @@
 #include "Puzzle.h"
-
+#include <assert.h>
 static const int R = 35; //半径
 static const int OFF_X = 400;
 static const int OFF_Y = 200;
@@ -44,10 +44,23 @@ Puzzle::Puzzle(GameObject* parent)
 	selX = -1;
 	selY = -1;
 	state = S_IDLE;
+
+	soundErase = LoadSoundMem("Assets/Onoma-Surprise02-1(High).mp3");
+	assert(soundErase > 0);
+	soundFall = LoadSoundMem("Assets/Onoma-Surprise02-2(High).mp3");
+	assert(soundFall > 0);
 }
 
 Puzzle::~Puzzle()
 {
+	if (soundErase > 0)
+	{
+		DeleteSoundMem(soundErase);
+	}
+	if (soundFall > 0)
+	{
+		DeleteSoundMem(soundFall);
+	}
 }
 
 void Puzzle::Update()
@@ -70,7 +83,11 @@ void Puzzle::Update()
 		break;
 	case S_ATTACK:
 		UpdateAttack();
+		break;
 
+	default:
+		assert(false);
+		break;
 	}
 }
 
@@ -198,18 +215,12 @@ void Puzzle::UpdateMove()
 		{
 			eraseTimer = 0;
 			state = S_ERASE;
+			PlaySoundMem(soundErase, DX_PLAYTYPE_BACK);
 		}
 		else
 		{
 			state = S_IDLE;
 		}
-		/*
-		もし、三つ以上並んだブロックがあるなら
-		state = S_ERASE;
-		ないなら
-		state = S_IDLE;
-		*/
-		state = S_IDLE;
 	}
 }
 
@@ -226,40 +237,63 @@ void Puzzle::UpdateErase()
 	{
 		PrepareFall();
 		state = S_FALL;
+		fallSoundRequested = false;
+		
 	}
+	
 }
 
 void Puzzle::UpdateFall()
 {
 	bool fallEnd = true;//全部が落ちた
+
 	for (int y = 0; y < HEIGET; y++)
 	{
 		for (int x = 0; x < WIDTH; x++)
 		{
+			Piece& c = field[y][x];
 			if (field[y][x].fallAdjust < 0)
 			{
 				fallEnd = false;
-				field[y][x].fallAdjust += 1.0f;
-				if (field[y][x].fallAdjust > 0)
+				c.fallAdjust += 8.0f;
+				if (c.fallAdjust > 0)
 				{
-					field[y][x].fallAdjust = 0;
+                   c.fallAdjust = 0;
 				}
+				
+				
 			}
 		}
 	}
 
 	if (fallEnd)
 	{
-		if (CanErase())
+		if (fallSoundRequested = false)
 		{
-			eraseTimer = 0;
-			state = S_ERASE;
+			PlaySoundMem(soundFall, DX_PLAYTYPE_BACK);
+				fallSoundRequested = true;
 		}
 		else
 		{
-			state = S_IDLE;
+			if (CheckSoundMem(soundFall) == 0)
+			{
+				if (CanErase())
+				{
+					eraseTimer = 0;
+					state = S_ERASE;
+					PlaySoundMem(soundErase, DX_PLAYTYPE_BACK);
+				}
+				else
+				{
+					state = S_IDLE;
+				}
+			}
 		}
-	}
+	} 
+
+		
+		
+	
 	//state = S_IDLE;
 }
 
@@ -311,10 +345,8 @@ bool Puzzle::CanErase()
 	{
 		return true;
 	}
-
 		return false;
-	
-	
+		
 }
 
 void Puzzle::PrepareFall()

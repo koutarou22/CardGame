@@ -1,6 +1,10 @@
 #pragma once
 #include"Engine/GameObject.h"
 #include<vector>
+/// <summary>
+/// パズドラのプレイ画面
+/// 　　　　　Sato Kotaro
+/// </summary>
 class Puzzle
 	:public GameObject
 {
@@ -46,6 +50,17 @@ private:
 	void UpdateFall();
 	void UpdateAttack();
 
+
+
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <returns></returns>
 	bool CanErase();
 	void PrepareFall();
+
+	int soundErase;
+	int soundFall;
+
+	bool fallSoundRequested;
 };
